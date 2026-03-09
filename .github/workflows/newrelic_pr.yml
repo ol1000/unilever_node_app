@@ -1,0 +1,25 @@
+name: New Relic PR Marker
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  log-deployment-marker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Marker to New Relic
+        run: |
+          curl -X POST https://api.newrelic.com/graphql \
+            -H "Content-Type: application/json" \
+            -H "Api-Key: ${{ secrets.NEW_RELIC_USER_KEY }}" \
+            -d '{
+              "query": "mutation { changeTrackingCreateDeployment(deployment: {
+                entityGuid: \"MjAzMzUwOHxBUE18QVBQTElDQVRJT058OTkzOTAwNjcz\",
+                version: \"${{ github.event.pull_request.head.sha }}\",
+                description: \"PR #${{ github.event.number }}: ${{ github.event.pull_request.title }}\",
+                user: \"${{ github.actor }}\",
+                deploymentType: OTHER,
+                changelog: \"${{ github.event.pull_request.html_url }}\"
+              }) { deploymentId } }"
+            }'
